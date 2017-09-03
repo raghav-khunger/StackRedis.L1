@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net;
+using StackRedis.L1.Common;
 using StackRedis.L1.MemoryCache;
 using StackRedis.L1.MemoryCache.Types;
 using StackRedis.L1.KeyspaceNotifications;
@@ -18,7 +19,7 @@ namespace StackRedis.L1
         private DatabaseInstanceData _dbData;
 
         private string _uniqueId;
-        
+
         /// <summary>
         /// Constructs a memory-caching layer for Redis IDatabase
         /// </summary>
@@ -39,13 +40,13 @@ namespace StackRedis.L1
         {
             _uniqueId = uniqueId;
 
-            if(redisDb != null)
+            if (redisDb != null)
                 _redisDb = new NotificationDatabase(redisDb);
 
             //Register for subscriptions and get the in-memory data store
             _dbData = DatabaseRegister.Instance.GetDatabaseInstanceData(uniqueId, redisDb);
         }
-        
+
         public void Flush()
         {
             _dbData.MemoryCache.Flush();
@@ -168,7 +169,7 @@ namespace StackRedis.L1
             else
                 return deleted > 0;
         }
-        
+
         public bool HashExists(RedisKey key, RedisValue hashField, CommandFlags flags = CommandFlags.None)
         {
             if (_dbData.MemoryHashes.Contains(key, hashField))
@@ -195,7 +196,7 @@ namespace StackRedis.L1
         {
             return _dbData.MemoryHashes.GetMulti(key, hashFields, (missingKeys) =>
             {
-                if(_redisDb != null)
+                if (_redisDb != null)
                 {
                     return Task.FromResult(_redisDb.HashGet(key, missingKeys, flags));
                 }
@@ -328,7 +329,7 @@ namespace StackRedis.L1
             if (_redisDb == null) throw new NotImplementedException();
             var result = _redisDb.HashScan(key, pattern, pageSize, flags);
 
-            foreach(var hashEntry in result)
+            foreach (var hashEntry in result)
             {
                 //Store in the hash
                 _dbData.MemoryHashes.Set(key, new[] { hashEntry });
@@ -563,7 +564,7 @@ namespace StackRedis.L1
 
             if (_redisDb == null)
                 return false; //There's no redis so we know the key doesn't exist in memory
-            
+
             //We need to check redis since we don't know what we *don't* have
             return _redisDb.KeyExists(key, flags);
         }
@@ -653,7 +654,7 @@ namespace StackRedis.L1
                 return Task.FromResult(0);
             }
             else
-            { 
+            {
                 return _redisDb.KeyMigrateAsync(key, toServer, toDatabase, timeoutMilliseconds, migrateOptions, flags);
             }
 
@@ -665,7 +666,7 @@ namespace StackRedis.L1
             {
                 return true;
             }
-            { 
+            {
                 return _redisDb.KeyMove(key, database, flags);
             }
         }
@@ -733,7 +734,7 @@ namespace StackRedis.L1
 
             return await _redisDb.KeyRenameAsync(key, newKey, when, flags);
         }
-        
+
         public void KeyRestore(RedisKey key, byte[] value, TimeSpan? expiry = default(TimeSpan?), CommandFlags flags = CommandFlags.None)
         {
             if (_redisDb == null)
@@ -749,7 +750,7 @@ namespace StackRedis.L1
 
             return _redisDb.KeyRestoreAsync(key, value, expiry, flags);
         }
-        
+
         public TimeSpan? KeyTimeToLive(RedisKey key, CommandFlags flags = CommandFlags.None)
         {
             if (_redisDb == null)
@@ -1408,7 +1409,7 @@ namespace StackRedis.L1
         {
             if (_redisDb == null)
                 throw new NotImplementedException();
-            
+
             RedisValue value = _redisDb.SetPop(key, flags);
 
             //Remove it from memory
@@ -1523,7 +1524,7 @@ namespace StackRedis.L1
             if (_redisDb == null)
                 throw new NotImplementedException();
 
-            foreach(RedisValue value in _redisDb.SetScan(key, pattern, pageSize, flags))
+            foreach (RedisValue value in _redisDb.SetScan(key, pattern, pageSize, flags))
             {
                 //Save off the value
                 _dbData.MemorySets.Add(key, new[] { value });
@@ -1536,7 +1537,7 @@ namespace StackRedis.L1
             if (_redisDb == null)
                 throw new NotImplementedException();
 
-            foreach(RedisValue value in _redisDb.SetScan(key, pattern, pageSize, cursor, pageOffset, flags))
+            foreach (RedisValue value in _redisDb.SetScan(key, pattern, pageSize, cursor, pageOffset, flags))
             {
                 _dbData.MemorySets.Add(key, new[] { value });
                 yield return value;
@@ -1761,7 +1762,7 @@ namespace StackRedis.L1
 
             return result;
         }
-        
+
         //Does not cache the result since scores are not returned
         public RedisValue[] SortedSetRangeByScore(RedisKey key, double start = double.NegativeInfinity, double stop = double.PositiveInfinity, Exclude exclude = Exclude.None, Order order = Order.Ascending, long skip = 0, long take = -1, CommandFlags flags = CommandFlags.None)
         {
@@ -1823,7 +1824,7 @@ namespace StackRedis.L1
             else
             {
                 var resultArr = _redisDb.SortedSetRangeByScoreWithScores(key, start, stop, exclude, order, skip, take, flags);
-                
+
                 //It's too hard to cache when skip or take are specified. There could be other items with the same score not returned.
                 if (skip == 0 && take == -1)
                 {
@@ -1861,7 +1862,7 @@ namespace StackRedis.L1
                 {
                     _dbData.MemorySortedSets.AddContinuous(key, resultArr, start, stop);
                 }
-                
+
                 return resultArr;
             }
         }
@@ -2002,7 +2003,7 @@ namespace StackRedis.L1
             if (_redisDb == null)
                 throw new NotImplementedException();
 
-            foreach(var resultEntry in _redisDb.SortedSetScan(key, pattern, pageSize, flags))
+            foreach (var resultEntry in _redisDb.SortedSetScan(key, pattern, pageSize, flags))
             {
                 _dbData.MemorySortedSets.AddDiscontinuous(key, new[] { resultEntry });
 
@@ -2090,7 +2091,7 @@ namespace StackRedis.L1
                 //If the in-mem result is different from the redis result then clear memory
                 if (redisResult != result)
                     _dbData.MemoryCache.Remove(new[] { (string)key });
-                
+
                 return redisResult;
             }
         }
@@ -2115,7 +2116,7 @@ namespace StackRedis.L1
                 return redisResult;
             }
         }
-        
+
         /// <summary>
         /// Returns the value directly from Redis.
         /// </summary>
@@ -2242,7 +2243,7 @@ namespace StackRedis.L1
 
             return _redisDb.StringDecrementAsync(key, value, flags);
         }
-        
+
         /// <summary>
         /// Decrements a string in Redis, and removes the string from memory if present.
         /// </summary>
@@ -2385,7 +2386,7 @@ namespace StackRedis.L1
             {
                 if (_redisDb == null)
                     return Task.FromResult(new RedisValue());
-                
+
                 hasSetInRedis = true;
                 return Task.FromResult(_redisDb.StringGetSet(key, value, flags));
             }).Result;
@@ -2394,7 +2395,7 @@ namespace StackRedis.L1
             _dbData.MemoryCache.Add(key, value, null, When.Always);
 
             //Set it in redis if necessary
-            if(!hasSetInRedis && _redisDb != null)
+            if (!hasSetInRedis && _redisDb != null)
             {
                 _redisDb.StringSet(key, value, null, When.Always, flags);
             }
@@ -2421,7 +2422,7 @@ namespace StackRedis.L1
             _dbData.MemoryCache.Add(key, value, null, When.Always);
 
             //Set it in redis if necessary
-            if(!hasSetInRedis && _redisDb != null)
+            if (!hasSetInRedis && _redisDb != null)
                 await _redisDb.StringGetSetAsync(key, value, flags);
 
             return result;
@@ -2445,7 +2446,7 @@ namespace StackRedis.L1
                     return Task.FromResult(_redisDb.StringGetWithExpiry(key, flags));
                 }
             }).Result;
-            
+
         }
 
         /// <summary>
@@ -2554,7 +2555,7 @@ namespace StackRedis.L1
         /// </summary>
         public bool StringSet(KeyValuePair<RedisKey, RedisValue>[] values, When when = When.Always, CommandFlags flags = CommandFlags.None)
         {
-            foreach(var kvp in values)
+            foreach (var kvp in values)
             {
                 _dbData.MemoryCache.Add(kvp.Key, kvp.Value, null, when);
             }
@@ -2666,6 +2667,198 @@ namespace StackRedis.L1
 
             return _redisDb.StringSetRangeAsync(key, offset, value, flags);
         }
+
+        #region Dictionary related methods
+
+        private Dictionary<TKey, TValue> GetDictionaryFromRedis<TKey, TValue>(string redisKey,
+            CommandFlags flags = CommandFlags.None)
+        {
+            Dictionary<TKey, TValue> output = null;
+            HashEntry[] hashes = _redisDb.HashGetAll(redisKey, flags);
+
+            if (hashes.Any())
+            {
+                output = new Dictionary<TKey, TValue>();
+                foreach (HashEntry hash in hashes)
+                {
+                    var key = ProtobufNetHelper.DeserializeKey<TKey>(hash.Name.ToString());
+                    var value = ProtobufNetHelper.DeserializeValue<TValue>(hash.Value, true);
+                    if (output.ContainsKey(key))
+                    {
+
+                    }
+                    else
+                    {
+                        output.Add(key, value);
+                    }
+                }
+            }
+            return output;
+        }
+
+        /// <summary>
+        /// Gets the dictionary list
+        /// </summary>
+        public Dictionary<TKey, TValue> HashGetAllDictionary<TKey, TValue>(RedisKey redisKey,
+            CommandFlags flags = CommandFlags.None)
+        {
+            Dictionary<TKey, TValue> output = null;
+            var memoryHashes = _dbData.MemoryHashes;
+            Dictionary<TKey, TValue> dic = memoryHashes.GetHashDictionary<TKey, TValue>(redisKey);
+            if (dic != null && dic.Any())
+            {
+                output = dic;
+            }
+            else
+            {
+                if (_redisDb != null)
+                {
+                    output = GetDictionaryFromRedis<TKey, TValue>(redisKey);
+
+                    if (output != null)
+                    {
+                        // Set back the value to memory
+                        memoryHashes.SetHashDictionary(redisKey, output);
+                    }
+                }
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Sets the dictionary in memory and in redis. 
+        /// </summary>
+        public void HashSetDictionary<TKey, TValue>(RedisKey redisKey, Dictionary<TKey, TValue> dictionary, When when = When.Always, CommandFlags flags = CommandFlags.None)
+        {
+            //Set the values in memory
+            _dbData.MemoryHashes.SetHashDictionary(redisKey, dictionary, when);
+
+            if (_redisDb != null)
+            {
+                _redisDb.HashSet(redisKey,
+                    dictionary.Select(delegate (KeyValuePair<TKey, TValue> i)
+                    {
+                        RedisValue key = ProtobufNetHelper.SerializeKey(i.Key);
+                        RedisValue value = ProtobufNetHelper.SerializeValue(i.Value, true);
+                        return new HashEntry(key, value);
+
+                    }).ToArray(), flags);
+            }
+        }
+
+        /// <summary>
+        /// Gets the dictionary list enumerator
+        /// </summary>
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetHashDictionaryEnumerator<TKey, TValue>(RedisKey key, CommandFlags flags = CommandFlags.None)
+        {
+            Dictionary<TKey, TValue> dic = _dbData.MemoryHashes.GetHashDictionary<TKey, TValue>(key);
+            if (!dic.Any())
+            {
+                if (_redisDb != null)
+                {
+                    HashEntry[] hashes = _redisDb.HashGetAll(key, flags);
+
+                    if (hashes.Any())
+                    {
+
+                        foreach (HashEntry hash in hashes)
+                        {
+                            yield return new KeyValuePair<TKey, TValue>(
+                                ProtobufNetHelper.DeserializeKey<TKey>(hash.Name.ToString()),
+                                ProtobufNetHelper.DeserializeValue<TValue>(hash.Value, true));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                foreach (KeyValuePair<TKey, TValue> keyValuePair in dic)
+                {
+                    yield return keyValuePair;
+                }
+            }
+        }
+
+        public bool TryGetHashDictionaryValue<TKey, TValue>(RedisKey redisKey, TKey dictionaryItemKey, out TValue dictionaryItemValue, CommandFlags flags = CommandFlags.None)
+        {
+            bool success = false;
+            var memoryHashes = _dbData.MemoryHashes;
+
+            if (memoryHashes.TryGetDictionaryValue<TKey, TValue>(redisKey, dictionaryItemKey, out dictionaryItemValue))
+            {
+                success = true;
+            }
+            else
+            {
+                var redisVal = _redisDb.HashGet(redisKey, ProtobufNetHelper.SerializeKey(dictionaryItemKey));
+                if (redisVal.HasValue)
+                {
+                    dictionaryItemValue = ProtobufNetHelper.DeserializeValue<TValue>(redisVal, true);
+
+
+                    if (!memoryHashes.ContainsHashDictionary(redisKey))
+                    {
+                        var output = GetDictionaryFromRedis<TKey, TValue>(redisKey);
+
+                        if (output != null)
+                        {
+                            // Set back the value to memory
+                            memoryHashes.SetHashDictionary(redisKey, output);
+                        }
+                    }
+
+                    // Set back the value to memory
+                    memoryHashes.SetHashDictionaryItem(redisKey, dictionaryItemKey, dictionaryItemValue);
+
+                    success = true;
+                }
+            }
+            return success;
+        }
+
+        /// <summary>
+        /// Sets a dictionary item in a dictionary.
+        /// </summary>
+        public bool HashSetDictionaryItem<TKey, TValue>(string hashKey, TKey dictionaryItemKey, TValue dictionaryItemValue, When when = When.Always, CommandFlags flags = CommandFlags.None)
+        {
+            long result = _dbData.MemoryHashes.SetHashDictionaryItem(hashKey, dictionaryItemKey, dictionaryItemValue, when);
+
+            if (_redisDb != null)
+            {
+                return _redisDb.HashSet(hashKey, ProtobufNetHelper.SerializeKey(dictionaryItemKey),
+                    ProtobufNetHelper.SerializeValue(dictionaryItemValue, true), when, flags);
+            }
+            else
+            {
+                return result > 0;
+            }
+        }
+
+
+        /// <summary>
+        /// Deletes hash key item from memory and Redis.
+        /// </summary>
+        public bool HashDeleteDictionaryItem<TKey, TValue>(RedisKey key, TKey dictionaryItemKey, When when = When.Always, CommandFlags flags = CommandFlags.None)
+        {
+            long deleted = _dbData.MemoryHashes.DeleteHashDictionaryItem<TKey, TValue>(key, dictionaryItemKey, when);
+
+            if (_redisDb != null)
+            {
+                return _redisDb.HashDelete(key, ProtobufNetHelper.SerializeKey(dictionaryItemKey), flags);
+            }
+            else
+            {
+                return deleted > 0;
+            }
+        }
+
+        public bool ContainsHashDictionaryItem<TKey, TValue>(string hashKey, TKey dictionaryItemKey)
+        {
+            return _dbData.MemoryHashes.ContainsHashDictionaryItem<TKey, TValue>(hashKey, dictionaryItemKey);
+        }
+
+        #endregion
 
         public bool TryWait(Task task)
         {

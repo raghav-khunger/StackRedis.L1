@@ -91,6 +91,25 @@ namespace StackRedis.L1.MemoryCache
             return new ValOrRefNullable<T>();
         }
 
+        public T GetDictionary<T>(string key)
+        {
+            lock (_lockObj)
+            {
+                if (_cache.Contains(key))
+                {
+                    System.Diagnostics.Debug.WriteLine("Mem cache hit: " + key);
+                    T result = (T)_cache[key];
+                    return result;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Mem cache miss: " + key);
+                }
+            }
+
+            return default(T);
+        }
+
         /// <summary>
         /// Removes the stored TTL. Note that the key will still expire after the same timespan, it just won't be returned.
         /// To properly update the TTL, call Expire.

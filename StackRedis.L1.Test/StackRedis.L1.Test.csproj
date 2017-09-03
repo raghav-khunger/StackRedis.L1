@@ -34,10 +34,15 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="StackExchange.Redis, Version=1.0.316.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\StackExchange.Redis.1.0.488\lib\net45\StackExchange.Redis.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="StackExchange.Redis.StrongName, Version=1.0.316.0, Culture=neutral, PublicKeyToken=c219ff1ca8c2ce46, processorArchitecture=MSIL">
+      <HintPath>..\packages\StackExchange.Redis.StrongName.1.0.488\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
@@ -61,6 +66,7 @@
     <Compile Include="Hash\HashExistsAsync.cs" />
     <Compile Include="Hash\HashExists.cs" />
     <Compile Include="Hash\HashGetAll.cs" />
+    <Compile Include="Hash\HashDictionary.cs" />
     <Compile Include="Hash\HashGetAsync.cs" />
     <Compile Include="Hash\HashGet.cs" />
     <Compile Include="Hash\HashIncrementAsync.cs" />
@@ -134,9 +140,6 @@
     <Compile Include="UnitTestBase.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\StackRedis.L1.Notifications\StackRedis.L1.Notifications.csproj">
       <Project>{6b148145-7c3e-41df-beea-57e108513efe}</Project>
       <Name>StackRedis.L1.Notifications</Name>
@@ -145,6 +148,10 @@
       <Project>{b2319d19-f48a-4c99-99d8-98145c30562e}</Project>
       <Name>StackRedis.L1</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="key.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

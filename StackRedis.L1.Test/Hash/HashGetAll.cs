@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using StackExchange.Redis;
 using StackRedis.L1.MemoryCache;
@@ -9,6 +10,44 @@ namespace StackRedis.L1.Test
     [TestClass]
     public class HashGetAll : UnitTestBase
     {
+    
+        [TestMethod]
+        public void HashGetAll_Users()
+        {
+            const string dicKey = "AllUsers -D0F5D7A2-88CF-4F58-B9D4-C948F4B121C0";
+
+            var all = _memDb.HashGetAllDictionary<int, string>(dicKey);
+
+        }
+
+        [TestMethod]
+        public void HashGetAll_Dictionary()
+        {
+            const string dicKey = "HashGetAll_Dictionary";
+            Dictionary<int, string> dic = new Dictionary<int, string>();
+
+            dic.Add(1, "aa");
+            dic.Add(2, "bb");
+            dic.Add(3, "cc");
+
+            _memDb.HashSetDictionary(dicKey, dic);
+
+            var all = _memDb.HashGetAllDictionary<int, string>(dicKey);
+
+            Assert.AreEqual(1, CallsByMemDb);
+
+            Assert.AreEqual(3, all.Count);
+
+            _memDb.HashSetDictionaryItem(dicKey, 4, "dd");
+            Assert.AreEqual(2, CallsByMemDb);
+
+            _memDb.HashSetDictionaryItem(dicKey, 5, "ee");
+            Assert.AreEqual(3, CallsByMemDb);
+
+            all = _memDb.HashGetAllDictionary<int, string>(dicKey);
+            Assert.AreEqual(5, all.Count);
+        }
+
         [TestMethod]
         public void HashGetAll_Simple()
         {
@@ -19,7 +58,7 @@ namespace StackRedis.L1.Test
             Assert.AreEqual("key2", (string)all[1].Name);
             Assert.AreEqual("value2", (string)all[1].Value);
             Assert.AreEqual(1, CallsByMemDb);
-            
+
             //Retrieve an individual value
             Assert.AreEqual("value1", (string)_memDb.HashGet("hashKey", "key1"));
             Assert.AreEqual(1, CallsByMemDb);

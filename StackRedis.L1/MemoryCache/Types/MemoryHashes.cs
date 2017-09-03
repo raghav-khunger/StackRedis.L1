@@ -89,7 +89,7 @@ namespace StackRedis.L1.MemoryCache.Types
             }
 
             return result;
-        }  
+        }
 
         internal bool Contains(string hashKey, string key)
         {
@@ -110,17 +110,17 @@ namespace StackRedis.L1.MemoryCache.Types
 
             return new RedisValue();
         }
-        
+
         internal long Set(string hashKey, HashEntry[] hashEntries, When when = When.Always)
         {
             long result = 0;
             var hash = GetHash(hashKey);
             if (hash == null)
                 hash = SetHash(hashKey);
-            
+
             foreach (HashEntry entry in hashEntries)
             {
-                if (when ==  When.Always || (hash.ContainsKey(entry.Name) && when == When.Exists))
+                if (when == When.Always || (hash.ContainsKey(entry.Name) && when == When.Exists))
                 {
                     hash.Remove(entry.Name);
 
@@ -128,7 +128,7 @@ namespace StackRedis.L1.MemoryCache.Types
                     hash.Add(entry.Name, entry.Value);
                     result++;
                 }
-                else if(!hash.ContainsKey(entry.Name) && when == When.NotExists)
+                else if (!hash.ContainsKey(entry.Name) && when == When.NotExists)
                 {
                     //Add the key
                     hash.Add(entry.Name, entry.Value);
@@ -154,17 +154,17 @@ namespace StackRedis.L1.MemoryCache.Types
             return result;
         }
 
-        private Dictionary<string,RedisValue> SetHash(string hashKey)
+        private Dictionary<string, RedisValue> SetHash(string hashKey)
         {
             var hash = new Dictionary<string, RedisValue>();
             _objMemCache.Add(hashKey, hash, null, When.Always);
             return hash;
         }
 
-        private Dictionary<string,RedisValue> GetHash(string hashKey)
+        internal Dictionary<string, RedisValue> GetHash(string hashKey)
         {
             var result = _objMemCache.Get<Dictionary<string, RedisValue>>(hashKey);
-            if(result.HasValue)
+            if (result.HasValue)
             {
                 return result.Value;
             }
@@ -173,5 +173,94 @@ namespace StackRedis.L1.MemoryCache.Types
                 return null;
             }
         }
+
+        #region Dictionary related methods
+
+        internal Dictionary<TKey, TValue> GetHashDictionary<TKey, TValue>(string hashKey)
+        {
+            var result = _objMemCache.Get<Dictionary<TKey, TValue>>(hashKey);
+            if (result.HasValue)
+            {
+                return result.Value;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        internal void SetHashDictionary<TKey, TValue>(string hashKey, Dictionary<TKey, TValue> hashDictionary, When when = When.Always)
+        {
+            _objMemCache.Add(hashKey, hashDictionary, null, when);
+        }
+
+        internal bool TryGetDictionaryValue<TKey, TValue>(string hashKey, TKey dictionaryItemKey, out TValue dictionaryItemValue)
+        {
+            dictionaryItemValue = default(TValue);
+            bool success = false;
+            if (ContainsHashDictionary(hashKey))
+            {
+                var dic = _objMemCache.GetDictionary<Dictionary<TKey, TValue>>(hashKey);
+                if (dic.ContainsKey(dictionaryItemKey))
+                {
+                    dictionaryItemValue = dic[dictionaryItemKey];
+                    success = true;
+                }
+            }
+            return success;
+        }
+
+        internal long SetHashDictionaryItem<TKey, TValue>(string hashKey, TKey dictionaryItemKey, TValue dictionaryItemValue, When when = When.Always)
+        {
+            long result = 0;
+            if (ContainsHashDictionary(hashKey))
+            {
+                var dic = _objMemCache.GetDictionary<Dictionary<TKey, TValue>>(hashKey);
+                dic[dictionaryItemKey] = dictionaryItemValue;
+                result = 1;
+            }
+            return result;
+        }
+
+        internal bool ContainsHashDictionary(string hashKey)
+        {
+            return _objMemCache.ContainsKey(hashKey);
+        }
+
+        internal bool ContainsHashDictionaryItem<TKey, TValue>(string hashKey, TKey dictionaryItemKey)
+        {
+            bool contains = false;
+            if (ContainsHashDictionary(hashKey))
+            {
+                var dic = _objMemCache.GetDictionary<Dictionary<TKey, TValue>>(hashKey);
+                if (dic.ContainsKey(dictionaryItemKey))
+                {
+                    contains = true;
+                }
+            }
+            return contains;
+        }
+
+        internal long DeleteHashDictionaryItem<TKey, TValue>(string hashKey, TKey dictionaryItemKey, When when = When.Always)
+        {
+            long result = 0;
+
+            if (ContainsHashDictionary(hashKey))
+            {
+                var dic = _objMemCache.GetDictionary<Dictionary<TKey, TValue>>(hashKey);
+                if (dic.ContainsKey(dictionaryItemKey))
+                {
+                    bool isRemoved = dic.Remove(dictionaryItemKey);
+
+                    if (isRemoved)
+                    {
+                        result = 1;
+                    }
+                }
+            }
+            return result;
+        }
+
+        #endregion 
     }
 }

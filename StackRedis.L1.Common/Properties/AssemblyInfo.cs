@@ -5,18 +5,14 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("StackRedis.L1")]
+[assembly: AssemblyTitle("StackRedis.L1.Common")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("StackRedis.L1")]
-[assembly: AssemblyCopyright("Copyright ©  2015")]
+[assembly: AssemblyProduct("StackRedis.L1.Common")]
+[assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-
-// Uncomment the below line if you want to test StackRedis.L1.Test
-//[assembly: InternalsVisibleTo("StackRedis.L1.Test")]
-
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
@@ -24,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("b2319d19-f48a-4c99-99d8-98145c30562e")]
+[assembly: Guid("ce858cb3-431a-454d-8c8c-4d3aaf0acdb3")]
 
 // Version information for an assembly consists of the following four values:
 //
